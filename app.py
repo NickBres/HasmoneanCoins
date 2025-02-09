@@ -21,16 +21,41 @@ st.markdown("### Analyze Hasmonean coin inscriptions to identify rulers based on
 # Load patterns
 patterns = load_patterns()
 
-# ---- Image Upload Section ----
-st.header("Upload a Coin Image")
-st.write("Upload an image of a coin, and the model will recognize the Hebrew letters.")
-uploaded_file = st.file_uploader("Choose an image", type=["jpg", "png"])
+# ---- Sample Demonstration Coins ----
+st.header("Choose a Sample Coin or Upload Your Own")
 
-if uploaded_file:
-    # Convert image to bytes
+# Preloaded sample images (store in the `demo_coins/` folder)
+SAMPLE_COINS = {
+    "Coin 1 - Alexander Jannaeus": "demo_coins/alexander_jannaeus.png",
+    "Coin 2 - John Hyrcanus": "demo_coins/john_hyrcanus.png",
+    "Coin 3 - Yehuda Aristobelus": "demo_coins/yehuda_aristobelus.png"
+}
+
+# Dropdown for selecting a sample coin
+selected_coin = st.selectbox("Select a Sample Coin:", ["Upload New"] + list(SAMPLE_COINS.keys()))
+
+# Hide file uploader when a sample coin is chosen
+if selected_coin == "Upload New":
+    uploaded_file = st.file_uploader("Or upload your own image", type=["jpg", "png"])
+else:
+    uploaded_file = None
+
+# Load the selected sample coin or the uploaded file
+image = None
+image_bytes = None
+if selected_coin != "Upload New":
+    image_path = SAMPLE_COINS[selected_coin]
+    with open(image_path, "rb") as f:
+        image_bytes = f.read()
+    image = Image.open(image_path)
+    st.image(image, caption=f"Selected Sample: {selected_coin}", use_container_width=True)
+elif uploaded_file:
     image_bytes = uploaded_file.getvalue()
     image = Image.open(io.BytesIO(image_bytes))
+    st.image(image, caption="Uploaded Image", use_container_width=True)
 
+# ---- Process Image If Available ----
+if image:
     # ---- Confidence Threshold ----
     st.header("Confidence Filter")
     st.write("Adjust the confidence level. Only letters detected with confidence above this threshold will be displayed.")
@@ -44,11 +69,12 @@ if uploaded_file:
         result = response.json()
         predictions = result.get("predictions", [])
 
-        # Save JSON result
-        os.makedirs("inference_results", exist_ok=True)
-        json_filename = f"inference_results/{uploaded_file.name.split('.')[0]}.json"
-        with open(json_filename, "w") as json_file:
-            json.dump(result, json_file, indent=4)
+        # Save JSON result (only for uploaded images, not demo images)
+        if uploaded_file:
+            os.makedirs("inference_results", exist_ok=True)
+            json_filename = f"inference_results/{uploaded_file.name.split('.')[0]}.json"
+            with open(json_filename, "w") as json_file:
+                json.dump(result, json_file, indent=4)
 
         # ---- Filter Predictions ----
         filtered_predictions = [p for p in predictions if p["confidence"] * 100 >= confidence_threshold]
@@ -70,8 +96,6 @@ if uploaded_file:
         # Use user-selected font size when visualizing letters
         detected_image = visualize_detections(image.copy(), visible_predictions, font_size=font_size)
         st.image(detected_image, caption="Detected Letters", use_container_width=True)
-
-
 
         # ---- Collapsible JSON Data ----
         with st.expander("View Raw JSON Data"):
@@ -116,5 +140,3 @@ if uploaded_file:
 
     else:
         st.error("Error: Could not process the image. Check your API key and model settings.")
-
-

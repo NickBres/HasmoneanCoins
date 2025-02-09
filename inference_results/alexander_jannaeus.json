@@ -1,0 +1,240 @@
+{
+    "inference_id": "4eb0c39f-1bac-44a9-ada5-1065e22ebf38",
+    "time": 0.0520865490000233,
+    "image": {
+        "width": 485,
+        "height": 485
+    },
+    "predictions": [
+        {
+            "x": 267.0,
+            "y": 291.5,
+            "width": 44.0,
+            "height": 77.0,
+            "confidence": 0.8998979330062866,
+            "class": "Resh",
+            "class_id": 10,
+            "detection_id": "1440c028-d653-4c42-90cf-3b79d6db8f0e"
+        },
+        {
+            "x": 171.0,
+            "y": 224.5,
+            "width": 54.0,
+            "height": 67.0,
+            "confidence": 0.8980516791343689,
+            "class": "Lamed",
+            "class_id": 7,
+            "detection_id": "bf232e38-c01a-4c5d-ae4b-813cf699b798"
+        },
+        {
+            "x": 157.0,
+            "y": 171.0,
+            "width": 58.0,
+            "height": 70.0,
+            "confidence": 0.8976789116859436,
+            "class": "Kaf",
+            "class_id": 6,
+            "detection_id": "e4776c60-bd6f-45f7-b448-1da362370225"
+        },
+        {
+            "x": 212.0,
+            "y": 232.5,
+            "width": 54.0,
+            "height": 69.0,
+            "confidence": 0.8934805989265442,
+            "class": "Dalet",
+            "class_id": 2,
+            "detection_id": "93cac6e4-c300-42c0-ab6c-4ae55ca98e48"
+        },
+        {
+            "x": 299.0,
+            "y": 357.0,
+            "width": 66.0,
+            "height": 68.0,
+            "confidence": 0.8915168046951294,
+            "class": "Dalet",
+            "class_id": 2,
+            "detection_id": "d7c23b82-5b2a-4887-9246-d8cbf68996ab"
+        },
+        {
+            "x": 311.5,
+            "y": 291.0,
+            "width": 53.0,
+            "height": 66.0,
+            "confidence": 0.8870198130607605,
+            "class": "Bet",
+            "class_id": 1,
+            "detection_id": "5afc88af-978b-41ec-8265-85b336d076d6"
+        },
+        {
+            "x": 217.0,
+            "y": 293.5,
+            "width": 54.0,
+            "height": 63.0,
+            "confidence": 0.8859601020812988,
+            "class": "Hei",
+            "class_id": 4,
+            "detection_id": "fd11e16f-2f92-437f-8f30-b68809bacaf0"
+        },
+        {
+            "x": 182.5,
+            "y": 340.5,
+            "width": 75.0,
+            "height": 63.0,
+            "confidence": 0.8841069936752319,
+            "class": "Mem",
+            "class_id": 8,
+            "detection_id": "301c4662-cabe-4227-a0d2-dbec91f7c6e7"
+        },
+        {
+            "x": 280.5,
+            "y": 102.0,
+            "width": 63.0,
+            "height": 60.0,
+            "confidence": 0.8807828426361084,
+            "class": "Yod",
+            "class_id": 13,
+            "detection_id": "5014a63a-0a3f-4965-b9c9-7114e4bfaf7a"
+        },
+        {
+            "x": 345.5,
+            "y": 217.0,
+            "width": 49.0,
+            "height": 80.0,
+            "confidence": 0.8790314793586731,
+            "class": "Nun",
+            "class_id": 9,
+            "detection_id": "68b4c195-f14f-4105-9fb3-9ad1802fa1c3"
+        },
+        {
+            "x": 165.5,
+            "y": 285.0,
+            "width": 61.0,
+            "height": 60.0,
+            "confidence": 0.8730246424674988,
+            "class": "Yod",
+            "class_id": 13,
+            "detection_id": "8c268f84-bb97-4773-a031-51c5f52f3c80"
+        },
+        {
+            "x": 354.0,
+            "y": 141.5,
+            "width": 50.0,
+            "height": 79.0,
+            "confidence": 0.8692625164985657,
+            "class": "Nun",
+            "class_id": 9,
+            "detection_id": "54d41a56-77eb-43e7-b0b1-b7d18156287c"
+        },
+        {
+            "x": 367.5,
+            "y": 287.5,
+            "width": 59.0,
+            "height": 65.0,
+            "confidence": 0.8682874441146851,
+            "class": "Het",
+            "class_id": 5,
+            "detection_id": "bba68737-4232-42bd-888d-1765197c62e8"
+        },
+        {
+            "x": 226.0,
+            "y": 110.5,
+            "width": 52.0,
+            "height": 55.0,
+            "confidence": 0.8650294542312622,
+            "class": "Hei",
+            "class_id": 4,
+            "detection_id": "b9bbf85c-460d-4c5e-9d30-1ae92beeb11f"
+        },
+        {
+            "x": 263.0,
+            "y": 163.5,
+            "width": 50.0,
+            "height": 71.0,
+            "confidence": 0.8592750430107117,
+            "class": "Nun",
+            "class_id": 9,
+            "detection_id": "c3f3a0a8-201b-48da-a32f-1b924d3683ac"
+        },
+        {
+            "x": 404.0,
+            "y": 218.0,
+            "width": 66.0,
+            "height": 68.0,
+            "confidence": 0.8556786775588989,
+            "class": "Hei",
+            "class_id": 4,
+            "detection_id": "b97623d2-381c-4b0b-84be-f77af3603499"
+        },
+        {
+            "x": 217.0,
+            "y": 169.5,
+            "width": 54.0,
+            "height": 59.0,
+            "confidence": 0.8519650101661682,
+            "class": "Hei",
+            "class_id": 4,
+            "detection_id": "4a606e44-6ba4-4fd3-8f4a-4164fcb392c9"
+        },
+        {
+            "x": 313.5,
+            "y": 152.5,
+            "width": 53.0,
+            "height": 79.0,
+            "confidence": 0.8514195084571838,
+            "class": "Taf",
+            "class_id": 11,
+            "detection_id": "b73a0638-7b89-4fe3-9964-c2e8f0787761"
+        },
+        {
+            "x": 256.5,
+            "y": 227.5,
+            "width": 39.0,
+            "height": 63.0,
+            "confidence": 0.8328360319137573,
+            "class": "Gimel",
+            "class_id": 3,
+            "detection_id": "e9133e48-1a80-4392-9495-5f0f21d61e88"
+        },
+        {
+            "x": 135.5,
+            "y": 230.5,
+            "width": 41.0,
+            "height": 63.0,
+            "confidence": 0.8283435106277466,
+            "class": "Vav",
+            "class_id": 12,
+            "detection_id": "eb01e1a7-d8c2-497d-b352-2f51d7aec59e"
+        },
+        {
+            "x": 242.0,
+            "y": 344.0,
+            "width": 60.0,
+            "height": 54.0,
+            "confidence": 0.8279921412467957,
+            "class": "Yod",
+            "class_id": 13,
+            "detection_id": "b399d9c2-8149-448f-85d0-2f5f446a4696"
+        },
+        {
+            "x": 299.0,
+            "y": 225.0,
+            "width": 50.0,
+            "height": 64.0,
+            "confidence": 0.8217102289199829,
+            "class": "Hei",
+            "class_id": 4,
+            "detection_id": "64783269-671e-4228-9e6b-49987c698198"
+        },
+        {
+            "x": 184.5,
+            "y": 118.5,
+            "width": 39.0,
+            "height": 59.0,
+            "confidence": 0.7191749811172485,
+            "class": "Vav",
+            "class_id": 12,
+            "detection_id": "66288f85-65bb-43d8-a246-abcb87326502"
+        }
+    ]
+}
