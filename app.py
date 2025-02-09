@@ -107,9 +107,10 @@ if image:
         st.subheader(f"**{ruler_name}**")
 
         # ---- Visualizing the Matched Pattern ----
-        st.write("The image below highlights only the letters used in the ruler's pattern.")
-        ruler_match_image = visualize_detections(image.copy(), matched_letters, font_size=font_size)
-        st.image(ruler_match_image, caption=f"Matched Pattern for {ruler_name}", use_container_width=True)
+        if ruler_name != "Unknown Ruler":
+            st.write("The image below highlights only the letters used in the ruler's pattern.")
+            ruler_match_image = visualize_detections(image.copy(), matched_letters, font_size=font_size)
+            st.image(ruler_match_image, caption=f"Matched Pattern for {ruler_name}", use_container_width=True)
 
         # ---- Pattern Management Section ----
         st.header("Pattern Settings")
