@@ -45,12 +45,15 @@ def match_ruler_name(sorted_letters, patterns):
 # Load ruler patterns (multiple patterns per ruler)
 def load_patterns():
     """Load predefined and user-defined ruler name patterns."""
-    predefined_patterns = {
-    }
+    predefined_patterns = {}
 
     if os.path.exists(PATTERN_FILE):
-        with open(PATTERN_FILE, "r") as file:
-            user_patterns = json.load(file)
+        try:
+            with open(PATTERN_FILE, "r") as file:
+                content = file.read().strip()  # Remove any extra spaces/newlines
+                user_patterns = json.loads(content) if content else {}  # Handle empty file
+        except (json.JSONDecodeError, FileNotFoundError):
+            user_patterns = {}  # If file is corrupted, reset to empty dict
     else:
         user_patterns = {}
 
