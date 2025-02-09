@@ -139,5 +139,5 @@ def visualize_detections(image, predictions, font_size=40, box_color="green", te
 
 def generate_safe_key(ruler, pattern, index):
     """Generate a unique, safe key for Streamlit elements."""
-    safe_pattern = re.sub(r'[^a-zA-Z0-9]', '_', pattern)  # Replace special chars
-    return f"del_{ruler}_{safe_pattern}_{index}"  # ✅ Add index to ensure uniqueness
+    safe_pattern = re.sub(r'[^a-zA-Z0-9]', '_', pattern)
+    return f"del_{ruler}_{safe_pattern}_{index}"

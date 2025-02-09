@@ -126,13 +126,13 @@ if image:
 
         for ruler, pattern_list in patterns.items():
             st.write(f"**{ruler}:**")
-            for index, pattern in enumerate(pattern_list):  # ✅ Add an index to track duplicates
+            for index, pattern in enumerate(pattern_list):
                 col1, col2 = st.columns([4, 1])
                 col1.write(f"- `{pattern}`")
-                safe_key = generate_safe_key(ruler, pattern, index)  # ✅ Pass the index for uniqueness
+                safe_key = generate_safe_key(ruler, pattern, index)
                 if col2.button("❌", key=safe_key):
                     delete_pattern(ruler, pattern)
-                    st.rerun()  # ✅ Correct function in latest Streamlit versions
+                    st.rerun()
 
         # Show stored patterns
         with st.expander("View Saved Patterns"):
