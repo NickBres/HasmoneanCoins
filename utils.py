@@ -46,9 +46,6 @@ def match_ruler_name(sorted_letters, patterns):
 def load_patterns():
     """Load predefined and user-defined ruler name patterns."""
     predefined_patterns = {
-        "Jonathan": ["Nun-Tav-Nun"],
-        "Alexander": ["Aleph-Lamed-*-Resh"],
-        "Hyrcanus": ["Hei-*-Kaf-Nun-*"]
     }
 
     if os.path.exists(PATTERN_FILE):
