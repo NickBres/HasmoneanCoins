@@ -12,7 +12,10 @@ from utils import (
 # API Details
 ROBOFLOW_MODEL = "hasmonean_coins_letter_detection"
 ROBOFLOW_VERSION = "13"
-ROBOFLOW_API_KEY = "tBK1cI9pNviSzUq3wQ4N"
+ROBOFLOW_API_KEY = os.getenv("ROBOFLOW_API_KEY")  # ✅ Load from env variable
+
+if not ROBOFLOW_API_KEY:
+    raise ValueError("Missing API Key! Set the ROBOFLOW_API_KEY environment variable.")
 
 # App Header
 st.title("Hasmonean Coins Recognition Model")
