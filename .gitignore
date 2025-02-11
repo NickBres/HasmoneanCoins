@@ -1,0 +1,70 @@
+# Ignore Python bytecode and cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore environment folders
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Ignore system files (macOS, Windows, Linux)
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Ignore PyCharm project settings
+.idea/
+*.iml
+
+# Ignore VSCode settings
+.vscode/
+
+# Ignore logs and temporary files
+logs/
+*.log
+*.out
+
+# Ignore compiled Cython files
+*.c
+*.so
+
+# Ignore model and cache directories
+models/
+checkpoints/
+cache/
+__cache__/
+
+# Ignore data-related files
+data/*.json
+data/*.csv
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+data/*.pkl
+data/*.h5
+
+# Ignore user-uploaded images and processed results
+inference_results/
+uploads/
+*.png
+*.jpg
+*.jpeg
+
+# Ignore Streamlit session state
+.streamlit/
+.st/
+
+# Ignore API keys and credentials (make sure to use environment variables!)
+.env
+.env.local
+.env.production
+.env.development
+
+# Ignore Python virtual environment files
+Pipfile
+Pipfile.lock
+requirements.txt

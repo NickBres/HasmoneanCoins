@@ -1,6 +1,8 @@
 import json
 import os
 import re
+import random
+
 from PIL import ImageDraw, ImageFont
 
 PATTERN_FILE = "data/predefined_patterns.json"
@@ -68,21 +70,27 @@ def load_patterns():
 
 # Save new ruler pattern
 def save_pattern(ruler, pattern):
-    """Save multiple patterns per ruler."""
+    """Save multiple patterns per ruler and handle empty or corrupted files."""
     os.makedirs("data", exist_ok=True)
 
-    if os.path.exists(PATTERN_FILE):
-        with open(PATTERN_FILE, "r") as file:
-            user_patterns = json.load(file)
+    # Ensure the file exists and is not empty
+    if os.path.exists(PATTERN_FILE) and os.path.getsize(PATTERN_FILE) > 0:
+        try:
+            with open(PATTERN_FILE, "r") as file:
+                user_patterns = json.load(file)
+        except (json.JSONDecodeError, FileNotFoundError):
+            user_patterns = {}  # Reset if JSON is corrupted
     else:
-        user_patterns = {}
+        user_patterns = {}  # Initialize empty dictionary
 
+    # Add the new pattern
     if ruler in user_patterns:
-        if pattern not in user_patterns[ruler]:  # ✅ Only append if the pattern is new
+        if pattern not in user_patterns[ruler]:  # ✅ Avoid duplicates
             user_patterns[ruler].append(pattern)
     else:
-        user_patterns[ruler] = [pattern]  # ✅ Store patterns as a list
+        user_patterns[ruler] = [pattern]
 
+    # Save back to JSON file
     with open(PATTERN_FILE, "w") as file:
         json.dump(user_patterns, file, indent=4)
 
@@ -141,3 +149,4 @@ def generate_safe_key(ruler, pattern, index):
     """Generate a unique, safe key for Streamlit elements."""
     safe_pattern = re.sub(r'[^a-zA-Z0-9]', '_', pattern)
     return f"del_{ruler}_{safe_pattern}_{index}"
+
