@@ -6,7 +6,7 @@ import json
 import os
 from utils import (
     sort_letters, match_ruler_name, load_patterns, save_pattern,
-    visualize_detections, delete_pattern, generate_safe_key
+    visualize_detections, delete_pattern, generate_safe_key, sort_letters_hebrew
 )
 
 # API Details
@@ -66,7 +66,7 @@ st.write("Uncheck incorrect letters to refine the results.")
 if predictions:
     # Filter Predictions
     filtered_predictions = [p for p in predictions if p["confidence"] * 100 >= confidence_threshold]
-    sorted_predictions = sort_letters(filtered_predictions)
+    sorted_predictions = sort_letters_hebrew(filtered_predictions, image.width, image.height)
 
     if not filtered_predictions:
         st.warning("⚠️ No letters detected at the selected confidence level.")
@@ -123,7 +123,7 @@ if predictions:
         st.json(result)
 
     # ---- Ruler Prediction ----
-    ruler_name, matched_letters = match_ruler_name(visible_predictions, patterns)
+    ruler_name, matched_letters = match_ruler_name(visible_predictions, patterns, image.width, image.height)
 
     if ruler_name != "Unknown Ruler":
         st.header("👑 Predicted Ruler")
