@@ -36,6 +36,7 @@ def match_ruler_name(sorted_letters, patterns, image_with, image_height):
     """
     best_match = None
     matched_letters = []
+    best_pattern = None
 
     for ruler, pattern_list in sorted(patterns.items(), key=lambda x: -max(len(p.split("-")) for p in x[1])):
         for pattern in sorted(pattern_list, key=lambda p: -len(p.split("-"))):  # Sort patterns by length
@@ -53,9 +54,10 @@ def match_ruler_name(sorted_letters, patterns, image_with, image_height):
             if idx == len(pattern_letters):  # Found a match
                 best_match = ruler
                 matched_letters = temp_matched
-                return best_match, matched_letters  # Return first successful match
+                best_pattern = pattern
+                return best_match, matched_letters, best_pattern  # Return first successful match
 
-    return "Unknown Ruler", []
+    return "Unknown Ruler", [] , None
 
 # Load ruler patterns (multiple patterns per ruler)
 def load_patterns():

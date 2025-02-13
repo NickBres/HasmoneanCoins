@@ -123,23 +123,14 @@ if predictions:
         st.json(result)
 
     # ---- Ruler Prediction ----
-    ruler_name, matched_letters = match_ruler_name(visible_predictions, patterns, image.width, image.height)
+    ruler_name, matched_letters, matched_pattern = match_ruler_name(visible_predictions, patterns, image.width,
+                                                                    image.height)
 
     if ruler_name != "Unknown Ruler":
         st.header("👑 Predicted Ruler")
         st.subheader(f"**{ruler_name}**")
 
-        matched_pattern = None
-        best_length = 0  # Track longest pattern
-
-        for pattern in sorted(patterns.get(ruler_name, []),
-                              key=lambda p: -len(p.split("-"))):  # Sort by length (longest first)
-            if match_ruler_name(visible_predictions, {ruler_name: [pattern]}, image.width, image.height)[
-                0] == ruler_name:
-                matched_pattern = pattern
-                break  # Stop at first successful match (which is now the longest)
-
-        # Display the matched pattern
+        # Display the matched pattern **directly from match_ruler_name()**
         if matched_pattern:
             st.write(f"**Matched Pattern:** `{matched_pattern}`")
 
