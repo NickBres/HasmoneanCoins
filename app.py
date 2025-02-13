@@ -17,6 +17,11 @@ ROBOFLOW_API_KEY = os.getenv("ROBOFLOW_API_KEY")
 if not ROBOFLOW_API_KEY:
     raise ValueError("Missing API Key! Set the ROBOFLOW_API_KEY environment variable.")
 
+st.set_page_config(
+    page_title="Hasmonean Coins Recognition",  # Sets the browser tab name
+    page_icon="🪙"  # Sets the favicon (emoji or path to an image)
+)
+
 # App Header
 st.title("🪙 Hasmonean Coins Recognition")
 st.markdown("### Upload a coin image to detect Hebrew inscriptions and identify rulers.")
