@@ -3,7 +3,9 @@ import requests
 from PIL import Image, ImageDraw
 import io
 import json
+import base64
 import os
+from inference_sdk import InferenceHTTPClient, InferenceConfiguration  # ✅ Import Roboflow SDK
 from utils import (
     sort_letters, match_ruler_name, load_patterns, save_pattern,
     visualize_detections, delete_pattern, generate_safe_key, sort_letters_hebrew
@@ -17,9 +19,23 @@ ROBOFLOW_API_KEY = os.getenv("ROBOFLOW_API_KEY")
 if not ROBOFLOW_API_KEY:
     raise ValueError("Missing API Key! Set the ROBOFLOW_API_KEY environment variable.")
 
+# Initialize Roboflow Client
+CLIENT = InferenceHTTPClient("https://detect.roboflow.com", ROBOFLOW_API_KEY)
+
+# Set Confidence and Overlay Defaults
+CONFIDENCE_THRESHOLD = 0.35  # Default 50%
+OVERLAY_THRESHOLD = 0.80  # Default 50%
+
+# Set custom inference configuration
+custom_configuration = InferenceConfiguration(
+    confidence_threshold=CONFIDENCE_THRESHOLD,
+    iou_threshold=OVERLAY_THRESHOLD  # IoU acts as an overlay threshold
+)
+
+# Streamlit Web App Config
 st.set_page_config(
-    page_title="Hasmonean Coins Recognition",  # Sets the browser tab name
-    page_icon="🪙"  # Sets the favicon (emoji or path to an image)
+    page_title="Hasmonean Coins Recognition",
+    page_icon="🪙"
 )
 
 # App Header
@@ -40,42 +56,26 @@ if not uploaded_file:
 # Read the uploaded image
 image_bytes = uploaded_file.getvalue()
 image = Image.open(io.BytesIO(image_bytes))
-
-# ---- Confidence Threshold ----
-st.header("🔍 Confidence Filter")
-st.write("Show only letters the AI is confident about. Lower confidence to see more possible letters.")
-confidence_threshold = st.slider("Minimum Confidence", 1, 100, 50)
+image_base64 = base64.b64encode(image_bytes).decode("utf-8")
 
 # ---- Send Image to Roboflow API ----
-api_url = f"https://detect.roboflow.com/{ROBOFLOW_MODEL}/{ROBOFLOW_VERSION}?api_key={ROBOFLOW_API_KEY}"
-response = requests.post(api_url, files={"file": image_bytes})
+with CLIENT.use_configuration(custom_configuration):
+    result = CLIENT.infer(image_base64, model_id=f"{ROBOFLOW_MODEL}/{ROBOFLOW_VERSION}")
 
-if response.status_code != 200:
+# Check API Response
+if not result or "predictions" not in result:
     st.error("❌ Error: Could not process the image. Check your API key and model settings.")
     st.stop()
 
-# Process Response
-result = response.json()
-predictions = result.get("predictions", [])
-
-# Save JSON result for debugging (only for uploaded images)
-os.makedirs("inference_results", exist_ok=True)
-json_filename = f"inference_results/{uploaded_file.name.split('.')[0]}.json"
-with open(json_filename, "w") as json_file:
-    json.dump(result, json_file, indent=4)
+predictions = result["predictions"]
 
 # ---- Letter Selection ----
 st.header("✅ Select Letters to Display")
 st.write("Uncheck incorrect letters to refine the results.")
 
 if predictions:
-    # Filter Predictions
-    filtered_predictions = [p for p in predictions if p["confidence"] * 100 >= confidence_threshold]
-    sorted_predictions = sort_letters_hebrew(filtered_predictions, image.width, image.height)
-
-    if not filtered_predictions:
-        st.warning("⚠️ No letters detected at the selected confidence level.")
-        st.stop()
+    # Filter Predictions Based on Confidence
+    sorted_predictions = sort_letters_hebrew(predictions, image.width, image.height)
 
     # Track current selections
     if "selected_letters" not in st.session_state:
