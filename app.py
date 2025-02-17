@@ -24,7 +24,7 @@ CLIENT = InferenceHTTPClient("https://detect.roboflow.com", ROBOFLOW_API_KEY)
 
 # Set Confidence and Overlay Defaults
 CONFIDENCE_THRESHOLD = 0.35  # Default 50%
-OVERLAY_THRESHOLD = 0.80  # Default 50%
+OVERLAY_THRESHOLD = 0.70  # Default 50%
 
 # Set custom inference configuration
 custom_configuration = InferenceConfiguration(
