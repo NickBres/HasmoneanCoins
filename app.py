@@ -11,7 +11,7 @@ from utils import (
 
 # API Details
 ROBOFLOW_MODEL = "hasmonean_coins_letter_detection"
-ROBOFLOW_VERSION = "13"
+ROBOFLOW_VERSION = "14"
 ROBOFLOW_API_KEY = os.getenv("ROBOFLOW_API_KEY")
 
 if not ROBOFLOW_API_KEY:
