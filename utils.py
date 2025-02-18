@@ -155,8 +155,8 @@ def visualize_detections(image, predictions, font_size=40, text_color="red"):
     Parameters:
     - image: PIL Image object.
     - predictions: List of detected letters.
-    - font_size: User-defined font size.
-    - text_color: Default text color (white).
+    - font_size: User-defined font size from slider.
+    - text_color: Default text color (red).
 
     Returns:
     - Annotated image with colored bounding boxes and labels.
@@ -168,19 +168,19 @@ def visualize_detections(image, predictions, font_size=40, text_color="red"):
         x, y, w, h = pred["x"], pred["y"], pred["width"], pred["height"]
         left, top, right, bottom = x - w / 2, y - h / 2, x + w / 2, y + h / 2
 
-        # Assign a color based on the letter
-        box_color = LETTER_COLORS.get(letter, "green")  # Default to green if letter not found
+        # Assign a unique color for each letter
+        box_color = LETTER_COLORS.get(letter, "green")  # Default to green if not found
 
         # Draw bounding box
         draw.rectangle([left, top, right, bottom], outline=box_color, width=4)
 
-        # Draw label
+        # Ensure text doesn't move upwards too much
         label = f"{letter} ({pred['confidence']:.1%})"
         text_x = left
-        text_y = max(5, top - font_size - 10)
+        text_y = max(5, top - font_size - 5)
 
-        # Draw text with user-defined font size
-        draw.text((text_x, text_y), label, fill=text_color, font=get_font(font_size))
+        # Draw text without custom font
+        draw.text((text_x, text_y), label, fill=text_color, font_size=font_size)
 
     return image
 
