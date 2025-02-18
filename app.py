@@ -7,9 +7,18 @@ import base64
 import os
 from inference_sdk import InferenceHTTPClient, InferenceConfiguration  # ✅ Import Roboflow SDK
 from utils import (
-    sort_letters, match_ruler_name, load_patterns, save_pattern,
-    visualize_detections, delete_pattern, generate_safe_key, sort_letters_hebrew
+    match_ruler_name, load_patterns, save_pattern,
+    visualize_detections, delete_pattern, generate_safe_key, sort_letters_hebrew, extract_feature_vector
 )
+
+import pickle
+import numpy as np
+import pandas as pd
+
+# Load the trained XGBoost model
+MODEL_PATH = "xgboost_ruler_classifier.pkl"
+with open(MODEL_PATH, "rb") as f:
+    ruler_classifier = pickle.load(f)
 
 # API Details
 ROBOFLOW_MODEL = "hasmonean_coins_letter_detection"
@@ -23,8 +32,8 @@ if not ROBOFLOW_API_KEY:
 CLIENT = InferenceHTTPClient("https://detect.roboflow.com", ROBOFLOW_API_KEY)
 
 # Set Confidence and Overlay Defaults
-CONFIDENCE_THRESHOLD = 0.35  # Default 50%
-OVERLAY_THRESHOLD = 0.70  # Default 50%
+CONFIDENCE_THRESHOLD = 0.35  # Default 35%
+OVERLAY_THRESHOLD = 0.70  # Default 70%
 
 # Set custom inference configuration
 custom_configuration = InferenceConfiguration(
@@ -40,13 +49,11 @@ st.set_page_config(
 
 # App Header
 st.title("🪙 Hasmonean Coins Recognition")
-st.markdown("### Upload a coin image to detect Hebrew inscriptions and identify rulers.")
 
 # Load stored ruler patterns
 patterns = load_patterns()
 
 # ---- Upload Section ----
-st.header("⬆️ Upload a Coin Image")
 uploaded_file = st.file_uploader("📂 Choose an image (JPG/PNG)", type=["jpg", "png"])
 
 if not uploaded_file:
@@ -57,6 +64,15 @@ if not uploaded_file:
 image_bytes = uploaded_file.getvalue()
 image = Image.open(io.BytesIO(image_bytes))
 image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+
+# ---- Track Image Changes to Preserve Selection ----
+if "previous_image" not in st.session_state:
+    st.session_state.previous_image = None
+
+image_hash = hash(image_bytes)  # Unique identifier for the uploaded image
+if st.session_state.previous_image != image_hash:
+    st.session_state.selected_letters = None  # Reset selection only if a new image is uploaded
+    st.session_state.previous_image = image_hash  # Store new image hash
 
 # ---- Send Image to Roboflow API ----
 with CLIENT.use_configuration(custom_configuration):
@@ -69,107 +85,141 @@ if not result or "predictions" not in result:
 
 predictions = result["predictions"]
 
-# ---- Letter Selection ----
-st.header("✅ Select Letters to Display")
-st.write("Uncheck incorrect letters to refine the results.")
+with st.expander("🔠 Adjust Recognized Letters (Optional)"):
+    st.write("Uncheck incorrect letters to refine the results.")
 
-if predictions:
-    # Filter Predictions Based on Confidence
-    sorted_predictions = sort_letters_hebrew(predictions, image.width, image.height)
+    if predictions:
+        sorted_predictions = sort_letters_hebrew(predictions, image.width, image.height)
 
-    # Track current selections
-    if "selected_letters" not in st.session_state:
-        st.session_state.selected_letters = {f"{p['class']}_{i}" for i, p in enumerate(sorted_predictions)}
-
-    # Toggle all selections
-    all_selected = len(st.session_state.selected_letters) == len(sorted_predictions)
-    button_label = "Uncheck All" if all_selected else "Check All"
-
-    if st.button(button_label):
-        if all_selected:
-            st.session_state.selected_letters.clear()
-        else:
+        # Initialize selection state only if it's not already set
+        if st.session_state.selected_letters is None:
             st.session_state.selected_letters = {f"{p['class']}_{i}" for i, p in enumerate(sorted_predictions)}
 
-    # Display checkboxes in multiple columns (3 columns)
-    cols = st.columns(3)
-    letter_visibility = {}
+        # Check if all letters are selected
+        all_selected = len(st.session_state.selected_letters) == len(sorted_predictions)
+        button_label = "Uncheck All" if all_selected else "Check All"
 
-    for i, pred in enumerate(sorted_predictions):
-        letter = pred["class"]
-        confidence = pred["confidence"] * 100
-        key = f"{letter}_{i}"
+        if st.button(button_label):
+            if all_selected:
+                st.session_state.selected_letters.clear()
+            else:
+                st.session_state.selected_letters = {f"{p['class']}_{i}" for i, p in enumerate(sorted_predictions)}
 
-        with cols[i % 3]:  # Distribute across columns
-            letter_visibility[key] = st.checkbox(
-                f"{letter} ({confidence:.1f}%)",
-                value=(key in st.session_state.selected_letters),
-                key=key
-            )
+        # Display checkboxes in multiple columns (3 columns)
+        cols = st.columns(3)
+        letter_visibility = {}
 
-    # Update state when checkboxes are toggled
-    st.session_state.selected_letters = {
-        key for key, visible in letter_visibility.items() if visible
+        for i, pred in enumerate(sorted_predictions):
+            letter = pred["class"]
+            confidence = pred["confidence"] * 100
+            key = f"{letter}_{i}"
+
+            with cols[i % 3]:  # Distribute across columns
+                letter_visibility[key] = st.checkbox(
+                    f"{letter} ({confidence:.1f}%)",
+                    value=(key in st.session_state.selected_letters),
+                    key=key
+                )
+
+        # Update state when checkboxes are toggled
+        st.session_state.selected_letters = {
+            key for key, visible in letter_visibility.items() if visible
+        }
+
+        # Apply filtering
+        visible_predictions = [p for i, p in enumerate(sorted_predictions) if f"{p['class']}_{i}" in st.session_state.selected_letters]
+    else:
+        visible_predictions = []
+
+font_size = st.slider("Text Size", min_value=5, max_value=30, value=15)
+filtered_image = visualize_detections(image.copy(), visible_predictions, font_size=font_size)
+st.image(filtered_image, caption="🔍 Filtered Letters", use_container_width=True)
+
+
+
+
+
+
+# ---- Predict Ruler from Letters ----
+if visible_predictions:
+    # Convert JSON to feature vector
+    feature_vector = extract_feature_vector({"predictions": visible_predictions})
+
+    # Reshape for model input
+    feature_array = np.array(feature_vector).reshape(1, -1)
+
+    # Get prediction probabilities
+    probabilities = ruler_classifier.predict_proba(feature_array)[0]
+
+    # Find the most confident class
+    predicted_class = np.argmax(probabilities)
+    confidence_score = probabilities[predicted_class] * 100  # Convert to percentage
+
+    # Map numeric prediction to full ruler name
+    class_mapping = {
+        0: "ALEXANDER JANNAEUS",
+        1: "JOHN HYRCANUS I",
+        2: "YEHUDA ARISTOBULUS"
     }
+    predicted_ruler = class_mapping.get(predicted_class, "Unknown")
 
-    # Apply filtering
-    visible_predictions = [p for i, p in enumerate(sorted_predictions) if f"{p['class']}_{i}" in st.session_state.selected_letters]
+    st.subheader(f"🤔 I think this is **{predicted_ruler}**")
+    st.write(f"I'm about **{confidence_score:.2f}%** sure, but you might want to double-check!")
 
-    # ---- Display Recognized Letters ----
-    st.header("🤖 Recognition Demonstration")
-    st.write("Detected letters are shown on the image.")
+    # Add warning if confidence is high but misclassification is possible
+    st.warning(
+        "⚠️ This prediction is made by a machine learning model and **may not be accurate**.\n"
+    )
 
-    font_size = st.slider("Text Size", min_value=5, max_value=30, value=15)
-    detected_image = visualize_detections(image.copy(), visible_predictions, font_size=font_size)
-    st.image(detected_image, caption="🔍 Detected Letters", use_container_width=True)
+    with st.expander("📊 View Feature Vector Sent to ML Model"):
+        st.write(
+            "This is the structured feature vector extracted from the detected letters and sent to the classification model.")
 
-    # ---- Collapsible JSON Data ----
-    with st.expander("📜 View Raw JSON Data"):
-        st.json(result)
+        # Define column names for readability
+        column_names = [
+            "A_Count", "A_AvgX", "A_AvgY", "A_StdX", "A_StdY", "A_BoxRatio",
+            "Bet_Count", "Bet_AvgX", "Bet_AvgY", "Bet_StdX", "Bet_StdY", "Bet_BoxRatio",
+            "Gimel_Count", "Gimel_AvgX", "Gimel_AvgY", "Gimel_StdX", "Gimel_StdY", "Gimel_BoxRatio",
+            "Dalet_Count", "Dalet_AvgX", "Dalet_AvgY", "Dalet_StdX", "Dalet_StdY", "Dalet_BoxRatio",
+            "Hei_Count", "Hei_AvgX", "Hei_AvgY", "Hei_StdX", "Hei_StdY", "Hei_BoxRatio",
+            "Vav_Count", "Vav_AvgX", "Vav_AvgY", "Vav_StdX", "Vav_StdY", "Vav_BoxRatio",
+            "Het_Count", "Het_AvgX", "Het_AvgY", "Het_StdX", "Het_StdY", "Het_BoxRatio",
+            "Yod_Count", "Yod_AvgX", "Yod_AvgY", "Yod_StdX", "Yod_StdY", "Yod_BoxRatio",
+            "Kaf_Count", "Kaf_AvgX", "Kaf_AvgY", "Kaf_StdX", "Kaf_StdY", "Kaf_BoxRatio",
+            "Lamed_Count", "Lamed_AvgX", "Lamed_AvgY", "Lamed_StdX", "Lamed_StdY", "Lamed_BoxRatio",
+            "Mem_Count", "Mem_AvgX", "Mem_AvgY", "Mem_StdX", "Mem_StdY", "Mem_BoxRatio",
+            "Nun_Count", "Nun_AvgX", "Nun_AvgY", "Nun_StdX", "Nun_StdY", "Nun_BoxRatio",
+            "Resh_Count", "Resh_AvgX", "Resh_AvgY", "Resh_StdX", "Resh_StdY", "Resh_BoxRatio",
+            "Taf_Count", "Taf_AvgX", "Taf_AvgY", "Taf_StdX", "Taf_StdY", "Taf_BoxRatio"
+        ]
 
-    # ---- Ruler Prediction ----
-    ruler_name, matched_letters, matched_pattern = match_ruler_name(visible_predictions, patterns, image.width,
-                                                                    image.height)
+        # Ensure the feature vector has the correct length
+        if len(feature_vector) == len(column_names):
+            df = pd.DataFrame([feature_vector], columns=column_names)
+            st.dataframe(df)  # Display as table
+        else:
+            st.error("⚠️ Feature vector length does not match expected columns. Check preprocessing.")
 
-    if ruler_name != "Unknown Ruler":
-        st.header("👑 Predicted Ruler")
-        st.subheader(f"**{ruler_name}**")
+else:
+    st.info("No letters detected. Please check your selections or upload a clearer image.")
 
-        # Display the matched pattern **directly from match_ruler_name()**
-        if matched_pattern:
-            st.write(f"**Matched Pattern:** `{matched_pattern}`")
 
-        st.write("The image below highlights only the letters used in the ruler's pattern.")
-        ruler_match_image = visualize_detections(image.copy(), matched_letters, font_size=font_size)
-        st.image(ruler_match_image, caption=f"Matched Pattern for {ruler_name}", use_container_width=True)
+# ---- Collapsible JSON Data ----
+with st.expander("📜 View Raw JSON Data"):
+    st.json(result)
 
-# ---- Pattern Management (Separated Section) ----
-st.markdown("---")  # 🔹 Divider for clarity
-st.header("⚙️ Pattern Settings")
-st.write("Define ruler names based on specific letter patterns.")
+# ---- Move "How This Works" to a Collapsed Expander ----
+with st.expander("ℹ️ How This Works (Click to Expand)"):
+    st.markdown("""
+    ### 🔍 How This Works
+    1️⃣ **Letter Recognition**  
+       - We use a pretrained **Roboflow 3.0** model to detect ancient Hasmonean letters in coin images.  
+       - The model only considers **letters with at least 35% confidence** and applies a **70% overlay threshold** to reduce errors.  
 
-# Add new pattern
-new_ruler = st.text_input("Enter Ruler Name:")
-new_pattern = st.text_input("Enter Pattern (use `*` for any letter, e.g., 'Aleph-*-Daled-Resh')")
-
-if st.button("💾 Save Pattern"):
-    if new_ruler and new_pattern:
-        save_pattern(new_ruler, new_pattern)
-        st.success(f"✅ Saved pattern for {new_ruler}: `{new_pattern}`")
-        st.rerun()
-
-# Manage stored patterns
-st.markdown("### 📋 Existing Patterns")
-for ruler, pattern_list in patterns.items():
-    st.write(f"**🏺 {ruler}:**")
-    for index, pattern in enumerate(pattern_list):
-        col1, col2 = st.columns([4, 1])
-        col1.write(f"- `{pattern}`")
-        safe_key = generate_safe_key(ruler, pattern, index)
-        if col2.button("❌", key=safe_key):
-            delete_pattern(ruler, pattern)
-            st.rerun()
-
-# Show stored patterns in a collapsible section
-with st.expander("📂 View Saved Patterns"):
-    st.json(patterns)
+    2️⃣ **Ruler Classification**  
+       - Once letters are detected, we pass this information to a separate **XGBoost model**.  
+       - The XGBoost model processes the detected letters and **classifies the coin to one of three rulers**:  
+         - 🏛️ **ALEXANDER JANNAEUS**  
+         - 🏛️ **JOHN HYRCANUS I**  
+         - 🏛️ **YEHUDA ARISTOBULUS**  
+    """)

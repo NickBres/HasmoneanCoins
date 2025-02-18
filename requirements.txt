@@ -1,5 +1,7 @@
 streamlit
+numpy
+pandas
+xgboost
+Pillow
 requests
-pillow
-inference_sdk
-opencv-python-headless
+inference-sdk

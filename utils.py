@@ -3,10 +3,14 @@ import os
 import re
 import random
 import statistics
+import numpy as np
 
 from PIL import ImageDraw, ImageFont
 
 PATTERN_FILE = "data/predefined_patterns.json"
+
+ALL_LETTERS = ["A", "Bet", "Gimel", "Dalet", "Hei", "Vav", "Het",
+                   "Yod", "Kaf", "Lamed", "Mem", "Nun", "Resh", "Taf"]
 
 def get_font(size=30):
     """Tries to load Arial font, falls back to default font if unavailable."""
@@ -285,4 +289,45 @@ def sort_letters_hebrew(predictions, image_width, image_height):
         print(f"Letter: {p['class']}, X: {p['x']}, Y: {p['y']}")
 
     return sorted_predictions
+
+def extract_feature_vector(json_data):
+    """ Converts Roboflow JSON output into a 6N feature vector without image size. """
+    if not json_data or "predictions" not in json_data or not json_data["predictions"]:
+        print("⚠️ WARNING: No letters detected.")
+        return np.zeros(len(ALL_LETTERS) * 6)  # Return zero vector if no letters found
+
+    # Initialize feature storage
+    letter_counts = {letter: 0 for letter in ALL_LETTERS}
+    letter_positions_x = {letter: [] for letter in ALL_LETTERS}
+    letter_positions_y = {letter: [] for letter in ALL_LETTERS}
+    box_ratios = {letter: [] for letter in ALL_LETTERS}
+
+    # Process predictions
+    for prediction in json_data["predictions"]:
+        if prediction["confidence"] < 0.35:  # Ensure confidence threshold is applied
+            continue
+
+        letter = prediction["class"]
+        x, y = prediction["x"], prediction["y"]
+        width, height = prediction["width"], prediction["height"]
+
+        if letter in letter_counts:
+            letter_counts[letter] += 1
+            letter_positions_x[letter].append(x)
+            letter_positions_y[letter].append(y)
+            box_ratios[letter].append(width / height)  # Raw width/height ratio
+
+    # Create feature vector
+    feature_vector = []
+    for letter in ALL_LETTERS:
+        count = letter_counts[letter]
+        avg_x = np.mean(letter_positions_x[letter]) if letter_positions_x[letter] else 0
+        avg_y = np.mean(letter_positions_y[letter]) if letter_positions_y[letter] else 0
+        std_x = np.std(letter_positions_x[letter]) if len(letter_positions_x[letter]) > 1 else 0
+        std_y = np.std(letter_positions_y[letter]) if len(letter_positions_y[letter]) > 1 else 0
+        avg_ratio = np.mean(box_ratios[letter]) if box_ratios[letter] else 0
+
+        feature_vector.extend([count, avg_x, avg_y, std_x, std_y, avg_ratio])
+
+    return np.array(feature_vector)
 
