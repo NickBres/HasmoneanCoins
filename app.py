@@ -131,7 +131,7 @@ with st.expander("🔠 Adjust Recognized Letters (Optional)"):
     else:
         visible_predictions = []
 
-font_size = st.slider("Text Size", min_value=5, max_value=30, value=15)
+font_size = st.slider("Text Size", min_value=5, max_value=50, value=15)
 filtered_image = visualize_detections(image.copy(), visible_predictions, font_size=font_size)
 st.image(filtered_image, caption="🔍 Filtered Letters", use_container_width=True)
 

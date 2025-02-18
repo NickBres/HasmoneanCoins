@@ -12,6 +12,23 @@ PATTERN_FILE = "data/predefined_patterns.json"
 ALL_LETTERS = ["A", "Bet", "Gimel", "Dalet", "Hei", "Vav", "Het",
                    "Yod", "Kaf", "Lamed", "Mem", "Nun", "Resh", "Taf"]
 
+LETTER_COLORS = {
+    "A": "#FF5733",       # Red-Orange
+    "Bet": "#33FF57",     # Green
+    "Gimel": "#3357FF",   # Blue
+    "Dalet": "#F4D03F",   # Yellow
+    "Hei": "#8E44AD",     # Purple
+    "Vav": "#E74C3C",     # Bright Red
+    "Het": "#1ABC9C",     # Turquoise
+    "Yod": "#3498DB",     # Light Blue
+    "Kaf": "#9B59B6",     # Violet
+    "Lamed": "#E67E22",   # Orange
+    "Mem": "#2ECC71",     # Dark Green
+    "Nun": "#34495E",     # Dark Blue-Grey
+    "Resh": "#D35400",    # Dark Orange
+    "Taf": "#95A5A6"      # Grey
+}
+
 def get_font(size=30):
     """Tries to load Arial font, falls back to default font if unavailable."""
     try:
@@ -131,35 +148,39 @@ def delete_pattern(ruler, pattern):
         json.dump(user_patterns, file, indent=4)
 
 
-def visualize_detections(image, predictions, font_size=40, box_color="green", text_color="red"):
+def visualize_detections(image, predictions, font_size=40, text_color="red"):
     """
-    Draws bounding boxes and labels on an image.
+    Draws bounding boxes and labels on an image with unique colors per letter.
 
     Parameters:
     - image: PIL Image object.
-    - predictions: List of detected letters (or matched letters).
+    - predictions: List of detected letters.
     - font_size: User-defined font size.
-    - box_color: Color of bounding box.
-    - text_color: Color of text.
+    - text_color: Default text color (white).
 
     Returns:
-    - Annotated image with bounding boxes and labels.
+    - Annotated image with colored bounding boxes and labels.
     """
     draw = ImageDraw.Draw(image)
 
     for pred in predictions:
+        letter = pred["class"]
         x, y, w, h = pred["x"], pred["y"], pred["width"], pred["height"]
         left, top, right, bottom = x - w / 2, y - h / 2, x + w / 2, y + h / 2
 
-        draw.rectangle([left, top, right, bottom], outline=box_color, width=4)
-        label = f"{pred['class']} ({pred['confidence']:.1%})"
+        # Assign a color based on the letter
+        box_color = LETTER_COLORS.get(letter, "green")  # Default to green if letter not found
 
-        # Ensure text doesn't go outside the image bounds
+        # Draw bounding box
+        draw.rectangle([left, top, right, bottom], outline=box_color, width=4)
+
+        # Draw label
+        label = f"{letter} ({pred['confidence']:.1%})"
         text_x = left
         text_y = max(5, top - font_size - 10)
 
         # Draw text with user-defined font size
-        draw.text((text_x, text_y), label, fill=text_color, font_size=font_size)
+        draw.text((text_x, text_y), label, fill=text_color, font=get_font(font_size))
 
     return image
 
