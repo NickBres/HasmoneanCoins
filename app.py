@@ -8,7 +8,8 @@ import os
 from inference_sdk import InferenceHTTPClient, InferenceConfiguration  # ✅ Import Roboflow SDK
 from utils import (
     match_ruler_name, load_patterns, save_pattern,
-    visualize_detections, delete_pattern, generate_safe_key, sort_letters_hebrew, extract_feature_vector
+    visualize_detections, delete_pattern, generate_safe_key, sort_letters_hebrew, extract_feature_vector,
+    normalize_feature_vector
 )
 
 import pickle
@@ -142,14 +143,22 @@ st.image(filtered_image, caption="🔍 Filtered Letters", use_container_width=Tr
 
 # ---- Predict Ruler from Letters ----
 if visible_predictions:
-    # Convert JSON to feature vector
+    # Extract feature vector
     feature_vector = extract_feature_vector({"predictions": visible_predictions})
 
-    # Reshape for model input
-    feature_array = np.array(feature_vector).reshape(1, -1)
+    print("🔍 Raw Feature Vector:", feature_vector)
 
-    # Get prediction probabilities
-    probabilities = ruler_classifier.predict_proba(feature_array)[0]
+    # Normalize feature vector
+    normalized_feature_vector = normalize_feature_vector(feature_vector, image.width, image.height)
+
+    print("🔍 Debug After Normalization:", feature_vector)  # Check AFTER normalization
+
+    # Convert normalized dictionary to NumPy array
+    normalized_feature_array = np.array([normalized_feature_vector[key] for key in feature_vector.keys()]).reshape(1,
+                                                                                                                   -1)
+
+    # Get prediction probabilities using the normalized feature vector
+    probabilities = ruler_classifier.predict_proba(normalized_feature_array)[0]
 
     # Find the most confident class
     predicted_class = np.argmax(probabilities)
@@ -173,7 +182,7 @@ if visible_predictions:
 
     with st.expander("📊 View Feature Vector Sent to ML Model"):
         st.write(
-            "This is the structured feature vector extracted from the detected letters and sent to the classification model.")
+            "Here are the extracted feature vectors before and after normalization. The normalized version is used for classification.")
 
         # Define column names for readability
         column_names = [
@@ -192,11 +201,16 @@ if visible_predictions:
             "Resh_Count", "Resh_AvgX", "Resh_AvgY", "Resh_StdX", "Resh_StdY", "Resh_BoxRatio",
             "Taf_Count", "Taf_AvgX", "Taf_AvgY", "Taf_StdX", "Taf_StdY", "Taf_BoxRatio"
         ]
-
-        # Ensure the feature vector has the correct length
+        # Convert raw feature vector to DataFrame
         if len(feature_vector) == len(column_names):
-            df = pd.DataFrame([feature_vector], columns=column_names)
-            st.dataframe(df)  # Display as table
+            raw_df = pd.DataFrame([feature_vector], columns=column_names)
+            st.subheader("🔹 Raw Feature Vector (Before Normalization)")
+            st.dataframe(raw_df)
+
+            # Convert normalized feature vector to DataFrame
+            normalized_df = pd.DataFrame([normalized_feature_vector], columns=column_names)
+            st.subheader("🔹 Normalized Feature Vector (Used for Classification)")
+            st.dataframe(normalized_df)
         else:
             st.error("⚠️ Feature vector length does not match expected columns. Check preprocessing.")
 

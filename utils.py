@@ -311,44 +311,81 @@ def sort_letters_hebrew(predictions, image_width, image_height):
 
     return sorted_predictions
 
+
 def extract_feature_vector(json_data):
-    """ Converts Roboflow JSON output into a 6N feature vector without image size. """
+    """
+    Converts Roboflow JSON output into a structured feature dictionary.
+
+    Features:
+    - Letter count
+    - Average X and Y coordinates
+    - Standard deviation of X and Y coordinates
+    - Average width-to-height ratio
+    """
+
     if not json_data or "predictions" not in json_data or not json_data["predictions"]:
         print("⚠️ WARNING: No letters detected.")
-        return np.zeros(len(ALL_LETTERS) * 6)  # Return zero vector if no letters found
+        return {f"{letter}_{feature}": 0 for letter in ALL_LETTERS for feature in
+                ["Count", "AvgX", "AvgY", "StdX", "StdY", "BoxRatio"]}
 
     # Initialize feature storage
-    letter_counts = {letter: 0 for letter in ALL_LETTERS}
+    feature_vector = {f"{letter}_{feature}": 0 for letter in ALL_LETTERS for feature in
+                      ["Count", "AvgX", "AvgY", "StdX", "StdY", "BoxRatio"]}
+
     letter_positions_x = {letter: [] for letter in ALL_LETTERS}
     letter_positions_y = {letter: [] for letter in ALL_LETTERS}
     box_ratios = {letter: [] for letter in ALL_LETTERS}
 
     # Process predictions
     for prediction in json_data["predictions"]:
-        if prediction["confidence"] < 0.35:  # Ensure confidence threshold is applied
+        if prediction["confidence"] < 0.35:  # Ignore low-confidence predictions
             continue
 
         letter = prediction["class"]
         x, y = prediction["x"], prediction["y"]
         width, height = prediction["width"], prediction["height"]
 
-        if letter in letter_counts:
-            letter_counts[letter] += 1
+        if letter in ALL_LETTERS:
+            feature_vector[f"{letter}_Count"] += 1
             letter_positions_x[letter].append(x)
             letter_positions_y[letter].append(y)
-            box_ratios[letter].append(width / height)  # Raw width/height ratio
+            box_ratios[letter].append(width / height)  # Compute width-to-height ratio
 
-    # Create feature vector
-    feature_vector = []
+    # Compute final statistics
     for letter in ALL_LETTERS:
-        count = letter_counts[letter]
-        avg_x = np.mean(letter_positions_x[letter]) if letter_positions_x[letter] else 0
-        avg_y = np.mean(letter_positions_y[letter]) if letter_positions_y[letter] else 0
-        std_x = np.std(letter_positions_x[letter]) if len(letter_positions_x[letter]) > 1 else 0
-        std_y = np.std(letter_positions_y[letter]) if len(letter_positions_y[letter]) > 1 else 0
-        avg_ratio = np.mean(box_ratios[letter]) if box_ratios[letter] else 0
+        if letter_positions_x[letter]:  # Only calculate if data exists
+            feature_vector[f"{letter}_AvgX"] = np.mean(letter_positions_x[letter])
+            feature_vector[f"{letter}_AvgY"] = np.mean(letter_positions_y[letter])
+            feature_vector[f"{letter}_StdX"] = np.std(letter_positions_x[letter]) if len(
+                letter_positions_x[letter]) > 1 else 0
+            feature_vector[f"{letter}_StdY"] = np.std(letter_positions_y[letter]) if len(
+                letter_positions_y[letter]) > 1 else 0
+            feature_vector[f"{letter}_BoxRatio"] = np.mean(box_ratios[letter])
 
-        feature_vector.extend([count, avg_x, avg_y, std_x, std_y, avg_ratio])
+    return feature_vector  # Returns a dictionary, compatible with normalization
 
-    return np.array(feature_vector)
+def normalize_feature_vector(feature_vector, image_width, image_height):
+    # Create a new dictionary to store normalized values
+    normalized_vector = feature_vector.copy()
 
+    # Compute total number of detected letters
+    letter_columns = [key for key in feature_vector.keys() if "_Count" in key]
+    total_letters = sum(feature_vector[col] for col in letter_columns)
+
+    # Normalize letter counts
+    for col in letter_columns:
+        normalized_vector[col] = feature_vector[col] / total_letters if total_letters > 0 else 0
+
+    # Normalize X and Y coordinates
+    x_columns = [key for key in feature_vector.keys() if "_AvgX" in key]
+    y_columns = [key for key in feature_vector.keys() if "_AvgY" in key]
+    std_x_columns = [key for key in feature_vector.keys() if "_StdX" in key]
+    std_y_columns = [key for key in feature_vector.keys() if "_StdY" in key]
+
+    for col in x_columns + std_x_columns:
+        normalized_vector[col] = feature_vector[col] / image_width if image_width > 0 else 0
+
+    for col in y_columns + std_y_columns:
+        normalized_vector[col] = feature_vector[col] / image_height if image_height > 0 else 0
+
+    return normalized_vector
