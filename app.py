@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 from PIL import Image, ImageDraw
+from streamlit_cropper import st_cropper
 import io
 import json
 import base64
@@ -62,17 +63,28 @@ if not uploaded_file:
     st.stop()
 
 # Read the uploaded image
-image_bytes = uploaded_file.getvalue()
-image = Image.open(io.BytesIO(image_bytes))
+original_image = Image.open(uploaded_file).convert("RGB")
+
+# ---- Crop Section ----
+st.subheader("✂️ Crop Image")
+st.caption("Drag the box to crop the coin before recognition.")
+cropped_image = st_cropper(original_image, realtime_update=True, box_color="#FF0000", aspect_ratio=None)
+
+image = cropped_image
+image_buffer = io.BytesIO()
+image.save(image_buffer, format="PNG")
+image_bytes = image_buffer.getvalue()
 image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+
+st.image(image, caption="🪙 Cropped Preview", use_container_width=True)
 
 # ---- Track Image Changes to Preserve Selection ----
 if "previous_image" not in st.session_state:
     st.session_state.previous_image = None
 
-image_hash = hash(image_bytes)  # Unique identifier for the uploaded image
+image_hash = hash(image_bytes)  # Unique identifier for the cropped image
 if st.session_state.previous_image != image_hash:
-    st.session_state.selected_letters = None  # Reset selection only if a new image is uploaded
+    st.session_state.selected_letters = None  # Reset selection only if the image changed
     st.session_state.previous_image = image_hash  # Store new image hash
 
 # ---- Send Image to Roboflow API ----

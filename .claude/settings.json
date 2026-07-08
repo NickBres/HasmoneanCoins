@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"d:/Projects/HasmoneanCoins\" ls-files)",
+      "Bash(python -c \"import streamlit_cropper\")",
+      "Bash(pip show *)",
+      "Bash(pip install *)",
+      "Bash(python -m py_compile app.py)",
+      "Bash(python -c \"import inference_sdk\")",
+      "Bash(python -c \"import inference_sdk; print\\('ok'\\)\")"
+    ]
+  }
+}
