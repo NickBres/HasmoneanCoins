@@ -66,9 +66,14 @@ if not uploaded_file:
 original_image = Image.open(uploaded_file).convert("RGB")
 
 # ---- Crop Section ----
+MAX_CROPPER_DIM = 700  # Cap display size so the crop box fits small screens
+
+display_image = original_image.copy()
+display_image.thumbnail((MAX_CROPPER_DIM, MAX_CROPPER_DIM), Image.LANCZOS)
+
 st.subheader("✂️ Crop Image")
 st.caption("Drag the box to crop the coin before recognition.")
-cropped_image = st_cropper(original_image, realtime_update=True, box_color="#FF0000", aspect_ratio=None)
+cropped_image = st_cropper(display_image, realtime_update=True, box_color="#FF0000", aspect_ratio=None)
 
 image = cropped_image
 image_buffer = io.BytesIO()
